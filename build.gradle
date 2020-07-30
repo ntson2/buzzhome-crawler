@@ -1,0 +1,61 @@
+apply plugin: 'java'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+    }
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+group = 'com.blackboard.testing'
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    include '**/ExampleTestSuite.class'
+}
+
+dependencies {
+    compile group: 'com.codeborne', name: 'selenide', version: '4.8'
+    compile group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '1.1.0'
+    compile group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.1.0'
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.11.208'
+    compile group: 'com.amazonaws.serverless', name: 'aws-serverless-java-container-jersey', version: '0.7'
+    compile group: 'org.reflections', name: 'reflections', version: '0.9.10'
+    compile group: 'junit', name: 'junit', version:'4.12'
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.816'
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+
+    compileOnly 'org.projectlombok:lombok:1.18.12'
+    annotationProcessor 'org.projectlombok:lombok:1.18.12'
+}
+
+task unzipLibs(type: Copy) {
+    def libs = file('../bin/lib.zip')
+    def resources = file("${projectDir}/src/main/resources/")
+
+    from zipTree(libs)
+    into resources
+}
+
+task zipLibs(type: Zip) {
+    from processResources
+    archiveName 'lib.zip'
+    destinationDir(file('../bin/'))
+}
+
+shadowJar {
+    from sourceSets.test.output
+    configurations = [ project.configurations.testRuntime ]
+}
+
+task deploy(type: Exec) {
+    commandLine 'sls', 'deploy'
+}

@@ -1,0 +1,155 @@
+# serverless.yml
+service: lambda-selenium
+
+package:
+  artifact: build/libs/lambda-selenium-all.jar
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  runtime: java8
+  memorySize: 3008
+  timeout: 900
+  versionFunctions: false
+
+functions:
+  'lambda-selenium-web-scrapper':
+    handler: 'com.blackboard.testing.lambda.LambdaTestHandler::handleRequest'
+    name: lambda-selenium-web-scrapper
+    description: Lambda Selenium Demo Tests
+
+resources:
+  Parameters:
+    CloudWatchRule:
+      Type: String
+      Default: "rate(15 minutes)"
+      Description: " Schedule Expression"
+    env:
+      Type: String
+      Default: dev
+  Conditions:
+    ShouldNotCreateEnvResources:
+      Fn::Equals:
+        - Ref: env
+        - NONE
+  Resources:
+    LambdaFunction:
+      Type: AWS::Lambda::Function
+      Metadata:
+        aws:asset:path: "./src"
+        aws:asset:property: Code
+      Properties:
+        Handler: com.blackboard.testing.lambda.LambdaTestHandler::handleRequest
+        FunctionName:
+          Fn::If:
+            - ShouldNotCreateEnvResources
+            - buzzho
+            - Fn::Join:
+                - ''
+                - - buzzho
+                  - "-"
+                  - Ref: env
+        Environment:
+          Variables:
+            ENV:
+              Ref: env
+            REGION:
+              Ref: AWS::Region
+        Role:
+          Fn::GetAtt:
+            - LambdaExecutionRole
+            - Arn
+        Runtime: java11
+        Timeout: '300'
+        MemorySize: 1536
+        Code:
+          S3Bucket: amplify-buzzho-dev-164754-deployment
+          S3Key: amplify-builds/buzzho-66566d4a434479636454-build.zip
+    LambdaExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName:
+          Fn::If:
+            - ShouldNotCreateEnvResources
+            - buzzhoLambdaRole56fd0e50
+            - Fn::Join:
+                - ''
+                - - buzzhoLambdaRole56fd0e50
+                  - "-"
+                  - Ref: env
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+    lambdaexecutionpolicy:
+      DependsOn:
+        - LambdaExecutionRole
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: lambda-execution-policy
+        Roles:
+          - Ref: LambdaExecutionRole
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - dynamodb:DescribeTable
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: "*"
+    CloudWatchEvent:
+      Type: AWS::Events::Rule
+      Properties:
+        Description: Schedule rule for Lambda
+        ScheduleExpression:
+          Ref: CloudWatchRule
+        State: ENABLED
+        Targets:
+          - Arn:
+              Fn::GetAtt:
+                - LambdaFunction
+                - Arn
+            Id: LambdaFunction
+    PermissionForEventsToInvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Ref: LambdaFunction
+        Action: lambda:InvokeFunction
+        Principal: events.amazonaws.com
+        SourceArn:
+          Fn::GetAtt:
+            - CloudWatchEvent
+            - Arn
+    fbsaigonairbnb:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: timestamp
+            AttributeType: N
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: '5'
+          WriteCapacityUnits: '5'
+        TableName: fbsaigonairbnb
