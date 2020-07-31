@@ -101,7 +101,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
             String postedTimestampString = timeElement.getAttribute("data-utime");
             long postedTimestamp = Long.parseLong(postedTimestampString);
 
-            if (postedTimestamp < checkpoint) {
+            if (postedTimestamp <= checkpoint) {
                 // already processed this post
                 log.warn("Already processed this record with timestamp = {} and checkpoint = {}", postedTimestamp, checkpoint);
                 return checkpoint;
