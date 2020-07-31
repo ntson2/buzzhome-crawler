@@ -11,6 +11,17 @@ provider:
   memorySize: 3008
   timeout: 900
   versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action: # Gives permission to DynamoDB tables in a specific region
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:us-east-1:*:*'
 
 functions:
   'lambda-selenium-web-scrapper':
@@ -136,20 +147,33 @@ resources:
           Fn::GetAtt:
             - CloudWatchEvent
             - Arn
-    fbsaigonairbnb:
+    fbgsaigonairbnb:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: timestamp
+          - AttributeName: postedTimestamp
             AttributeType: N
           - AttributeName: id
             AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
-          - AttributeName: timestamp
+          - AttributeName: postedTimestamp
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: '5'
           WriteCapacityUnits: '5'
-        TableName: fbsaigonairbnb
+        TableName: fbgsaigonairbnb
+    operation:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: key
+            AttributeType: S
+        KeySchema:
+          - AttributeName: key
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: '5'
+          WriteCapacityUnits: '5'
+        TableName: operation

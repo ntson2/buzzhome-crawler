@@ -1,20 +1,18 @@
 package com.blackboard.testing.lambda;
 
 import static com.blackboard.testing.lambda.logger.LoggerContainer.LOGGER;
-import static java.util.Optional.ofNullable;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfAllElementsLocatedBy;
 
 import com.blackboard.testing.db.DynamodbClient;
 import com.blackboard.testing.driver.LambdaWebDriverThreadLocalContainer;
-import com.blackboard.testing.lambda.exceptions.LambdaCodeMismatchException;
 import com.blackboard.testing.lambda.logger.Logger;
 import com.blackboard.testing.lambda.logger.LoggerContainer;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -45,6 +43,8 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
 
         log.info("Starting .........");
 
+        long checkpoint = DynamodbClient.getCheckpoint().getValue();
+
         LambdaWebDriverThreadLocalContainer container = new LambdaWebDriverThreadLocalContainer();
 
         WebDriver webDriver = container.getWebDriver();
@@ -71,70 +71,14 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
             List<WebElement> webElements = wait.until(presenceOfAllElementsLocatedBy(By.className("_3ccb")));
 
             log.info("There are {} elements", webElements.size());
+
+            Collections.reverse(webElements);
+
             for (WebElement element : webElements) {
-                try {
-                    List<WebElement> profile = element.findElements(By.className("profileLink"));
-                    String authorName;
-                    String authorProfile;
-                    String taggedName = null;
-                    String taggedLink = null;
-
-                    if (profile.size() == 0) {
-                        WebElement authorElement = element.findElement(By.cssSelector(".fwb.fcg")).findElement(By.cssSelector("a"));
-                        authorName = authorElement.getText();
-                        authorProfile = authorElement.getAttribute("href");
-                    } else {
-                        authorName = profile.get(0).getText();
-                        authorProfile = profile.get(0).getAttribute("href");
-
-                        if (profile.size() > 1) {
-                            taggedName = profile.get(1).getText();
-                            taggedLink = profile.get(1).getAttribute("href");
-                        }
-                    }
-
-                    String locationName = null;
-                    String locationLink = null;
-                    List<WebElement> timeAndLocation = element.findElements(By.className("_5pcq"));
-
-                    String timeString = timeAndLocation.get(0).getText();
-
-                    if (timeAndLocation.size() > 1) {
-                        locationName = timeAndLocation.get(1).getText();
-                        locationLink = timeAndLocation.get(1).getAttribute("href");
-                    }
-
-                    List<WebElement> contentElement1 = element.findElements(By.cssSelector(".text_exposed_root.text_exposed"));
-                    List<WebElement> contentElement2 = element.findElements(By.cssSelector("._5pbx.userContent._3576"));
-
-                    String content = contentElement1.isEmpty() ? (contentElement2.isEmpty() ? element.findElement(By.cssSelector(".mtm._5pco")).getText()
-                            : contentElement2.get(0).getText())
-                            : contentElement1.get(0).getText();
-
-                    long timestamp = System.currentTimeMillis();
-
-                    List<WebElement> photoElements = element.findElements(By.cssSelector("._5dec._xcx"));
-                    List<String> photos = photoElements.stream().map(e -> e.getAttribute("href")).collect(Collectors.toList());
-
-                    FbGroupContent fbGroupContent = FbGroupContent.builder()
-                            .id(UUID.randomUUID().toString())
-                            .content(content)
-                            .author(FbPage.builder().text(authorName).link(authorProfile).build())
-                            .location(FbPage.builder().text(locationName).link(locationLink).build())
-                            .tagged(FbPage.builder().text(taggedName).link(taggedLink).build())
-                            .timestamp(timestamp)
-                            .timeString(timeString)
-                            .photos(photos)
-                            .build();
-
-                    log.info("Scrapped: {}", fbGroupContent);
-                    log.info("------------------------------------------------");
-
-                    DynamodbClient.insert(fbGroupContent);
-                } catch (Exception e) {
-                    log.error("Error processing webelements {}", element.getText(), e);
-                }
+                checkpoint = processOnePost(element, checkpoint);
+                log.info("Saving checkpoint {} --------------------------------------------", checkpoint);
             }
+
         } catch (Exception e) {
             LOGGER.log(e);
         } finally {
@@ -144,15 +88,81 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
         return new TestResult();
     }
 
-    private Class getTestClass(TestRequest testRequest) {
-        LOGGER.log("Running Test: %s::%s", testRequest.getTestClass(), testRequest.getFrameworkMethod());
+    private long processOnePost(WebElement element, long checkpoint) {
         try {
-            LOGGER.log(testRequest.getTestClass());
-            LOGGER.log(testRequest.getFrameworkMethod());
-            return Class.forName(testRequest.getTestClass());
-        } catch (ClassNotFoundException e) {
-            LOGGER.log(e);
-            throw new LambdaCodeMismatchException(testRequest.getTestClass());
+            WebElement timeElement = element.findElement(By.cssSelector("._5ptz.timestamp.livetimestamp"));
+            String timeString = timeElement.getAttribute("title");
+            String postedTimestampString = timeElement.getAttribute("data-utime");
+            long postedTimestamp = Long.getLong(postedTimestampString);
+
+            if (postedTimestamp < checkpoint) {
+                // already processed this post
+                return checkpoint;
+            }
+            List<WebElement> profile = element.findElements(By.className("profileLink"));
+            String authorName;
+            String authorProfile;
+            String taggedName = null;
+            String taggedLink = null;
+
+            if (profile.size() == 0) {
+                WebElement authorElement = element.findElement(By.cssSelector(".fwb.fcg")).findElement(By.cssSelector("a"));
+                authorName = authorElement.getText();
+                authorProfile = authorElement.getAttribute("href");
+            } else {
+                authorName = profile.get(0).getText();
+                authorProfile = profile.get(0).getAttribute("href");
+
+                if (profile.size() > 1) {
+                    taggedName = profile.get(1).getText();
+                    taggedLink = profile.get(1).getAttribute("href");
+                }
+            }
+
+            String locationName = null;
+            String locationLink = null;
+
+            List<WebElement> contentElement1 = element.findElements(By.cssSelector(".text_exposed_root.text_exposed"));
+            List<WebElement> contentElement2 = element.findElements(By.cssSelector("._5pbx.userContent._3576"));
+
+            String content = contentElement1.isEmpty() ? (contentElement2.isEmpty() ? element.findElement(By.cssSelector(".mtm._5pco")).getText()
+                    : contentElement2.get(0).getText())
+                    : contentElement1.get(0).getText();
+
+            long timestamp = System.currentTimeMillis();
+
+            List<WebElement> photoElements = element.findElements(By.cssSelector("._5dec._xcx"));
+            List<String> photos = photoElements.stream().map(e -> e.getAttribute("href")).collect(Collectors.toList());
+
+            String link = null;
+            List<WebElement> links = element.findElements(By.className("_5pcq"));
+            if (links.isEmpty()) {
+                link = element.findElement(By.cssSelector(".fsm.fwn.fcg")).getAttribute("href");
+            } else {
+                link = links.get(0).getAttribute("href");
+            }
+
+            FbGroupContent fbGroupContent = FbGroupContent.builder()
+                    .id(UUID.randomUUID().toString())
+                    .content(content)
+                    .author(FbPage.builder().text(authorName).link(authorProfile).build())
+                    .location(FbPage.builder().text(locationName).link(locationLink).build())
+                    .tagged(FbPage.builder().text(taggedName).link(taggedLink).build())
+                    .savedTimestamp(timestamp)
+                    .postedTimeString(timeString)
+                    .photos(photos)
+                    .link(link)
+                    .postedTimestamp(postedTimestamp)
+                    .build();
+
+            log.info("Scrapped: {}", fbGroupContent);
+
+            DynamodbClient.insert(fbGroupContent);
+            DynamodbClient.saveCheckpoint(postedTimestamp);
+            return postedTimestamp;
+        } catch (Exception e) {
+            log.error("Error processing webelements {}", element.getText(), e);
+            return checkpoint;
         }
     }
 

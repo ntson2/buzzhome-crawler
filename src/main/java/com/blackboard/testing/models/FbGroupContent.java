@@ -17,15 +17,18 @@ import java.util.List;
 
 @Value
 @Builder
-@DynamoDBTable(tableName="fbsaigonairbnb")
+@DynamoDBTable(tableName="fbgsaigonairbnb")
 @Slf4j
 public class FbGroupContent {
 
     @DynamoDBHashKey(attributeName = "id")
     String id;
 
-    @DynamoDBRangeKey(attributeName = "timestamp")
-    long timestamp;
+    @DynamoDBRangeKey(attributeName = "postedTimestamp")
+    long postedTimestamp;
+
+    @DynamoDBAttribute(attributeName = "savedTimestamp")
+    long savedTimestamp;
 
     @DynamoDBTypeConverted(converter = FbPageConverter.class)
     @DynamoDBAttribute(attributeName = "author")
@@ -42,8 +45,11 @@ public class FbGroupContent {
     @DynamoDBAttribute(attributeName = "content")
     String content;
 
-    @DynamoDBAttribute(attributeName = "timeString")
-    String timeString;
+    @DynamoDBAttribute(attributeName = "postedTimeString")
+    String postedTimeString;
+
+    @DynamoDBAttribute(attributeName = "link")
+    String link;
 
     @DynamoDBAttribute(attributeName = "photos")
     List<String> photos;
