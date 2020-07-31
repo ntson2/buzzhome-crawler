@@ -149,6 +149,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
                 link = links.get(0).getAttribute("href");
             }
 
+            double price = DataParser.getPriceInUSD(content);
             FbGroupContent fbGroupContent = FbGroupContent.builder()
                     .id(UUID.randomUUID().toString())
                     .content(content)
@@ -160,6 +161,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
                     .photos(photos)
                     .link(link)
                     .postedTimestamp(postedTimestamp)
+                    .price(price)
                     .build();
 
             log.info("Scrapped: {}", fbGroupContent);

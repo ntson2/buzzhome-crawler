@@ -54,6 +54,9 @@ public class FbGroupContent {
     @DynamoDBAttribute(attributeName = "photos")
     List<String> photos;
 
+    @DynamoDBAttribute(attributeName = "price")
+    double price;
+
     static public class FbPageConverter implements DynamoDBTypeConverter<String, FbPage> {
         @Override
         public String convert(FbPage object) {
