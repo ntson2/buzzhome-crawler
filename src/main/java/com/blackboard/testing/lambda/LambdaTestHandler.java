@@ -3,6 +3,7 @@ package com.blackboard.testing.lambda;
 import static com.blackboard.testing.lambda.logger.LoggerContainer.LOGGER;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfAllElementsLocatedBy;
 
+import com.blackboard.testing.Constants;
 import com.blackboard.testing.db.DynamodbClient;
 import com.blackboard.testing.driver.LambdaWebDriverThreadLocalContainer;
 import com.blackboard.testing.lambda.logger.Logger;
@@ -43,7 +44,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
 
         log.info("Starting .........");
 
-        long checkpoint = DynamodbClient.getCheckpoint().getValue();
+        long originalCheckpoint = DynamodbClient.getCheckpoint().getValue();
 
         LambdaWebDriverThreadLocalContainer container = new LambdaWebDriverThreadLocalContainer();
 
@@ -52,10 +53,10 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
         try {
             WebDriverWait wait = new WebDriverWait(webDriver, Duration.ofMinutes(5).getSeconds());
 
-            webDriver.get("https://www.facebook.com/groups/950713841719944");
+            webDriver.get(Constants.FB_GROUP);
 
-            webDriver.findElement(By.name("email")).sendKeys("ntson2@yahoo.com");
-            webDriver.findElement(By.name("pass")).sendKeys("ilovesanmin" + Keys.ENTER);
+            webDriver.findElement(By.name("email")).sendKeys(Constants.USERNAME);
+            webDriver.findElement(By.name("pass")).sendKeys(Constants.PASSWORD+ Keys.ENTER);
 
             Thread.sleep(10000);
             Actions action = new Actions(webDriver);
@@ -72,12 +73,17 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
 
             log.info("There are {} elements", webElements.size());
 
-            Collections.reverse(webElements);
+            long checkpoint = originalCheckpoint;
 
             for (WebElement element : webElements) {
-                checkpoint = processOnePost(element, checkpoint);
-                log.info("Saving checkpoint {} --------------------------------------------", checkpoint);
+                long postedTimestamp = processOnePost(element, originalCheckpoint);
+                if (postedTimestamp > checkpoint) {
+                    checkpoint = postedTimestamp;
+                }
             }
+
+            log.info("Saving checkpoint {} --------------------------------------------", checkpoint);
+            DynamodbClient.saveCheckpoint(checkpoint);
 
         } catch (Exception e) {
             LOGGER.log(e);
@@ -93,10 +99,11 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
             WebElement timeElement = element.findElement(By.cssSelector("._5ptz.timestamp.livetimestamp"));
             String timeString = timeElement.getAttribute("title");
             String postedTimestampString = timeElement.getAttribute("data-utime");
-            long postedTimestamp = Long.getLong(postedTimestampString);
+            long postedTimestamp = Long.parseLong(postedTimestampString);
 
             if (postedTimestamp < checkpoint) {
                 // already processed this post
+                log.warn("Already processed this record with timestamp = {} and checkpoint = {}", postedTimestamp, checkpoint);
                 return checkpoint;
             }
             List<WebElement> profile = element.findElements(By.className("profileLink"));
@@ -158,7 +165,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
             log.info("Scrapped: {}", fbGroupContent);
 
             DynamodbClient.insert(fbGroupContent);
-            DynamodbClient.saveCheckpoint(postedTimestamp);
+
             return postedTimestamp;
         } catch (Exception e) {
             log.error("Error processing webelements {}", element.getText(), e);

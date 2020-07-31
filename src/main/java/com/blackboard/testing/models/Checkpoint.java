@@ -6,10 +6,12 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.Value;
 
 @Getter
 @Setter
+@ToString
 @DynamoDBTable(tableName="operation")
 public class Checkpoint {
     @DynamoDBHashKey(attributeName = "key")

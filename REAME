@@ -1,1 +1,16 @@
+1. Setup AWS credentials:
+https://www.serverless.com/framework/docs/providers/aws/guide/credentials/
+
+2. Install the serverless framework
+   npm install serverless -g
+
+3. Set username and password in com.blackboard.testing.Constants.java
+
+4. Package the jar and deploy
 gradle clean unzipLibs shadowJar deploy
+
+Lambda function name is lambda-selenium-web-scrapper
+It will be scheduled to run every 15 mins (configured in serverless.yml)
+
+References:
+https://docs.blackboard.com/lambda-selenium/java-tutorial.html

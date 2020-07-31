@@ -38,7 +38,7 @@ dependencies {
 }
 
 task unzipLibs(type: Copy) {
-    def libs = file('../bin/lib.zip')
+    def libs = file('lib.zip')
     def resources = file("${projectDir}/src/main/resources/")
 
     from zipTree(libs)
@@ -48,7 +48,7 @@ task unzipLibs(type: Copy) {
 task zipLibs(type: Zip) {
     from processResources
     archiveName 'lib.zip'
-    destinationDir(file('../bin/'))
+    destinationDir(file('bin/'))
 }
 
 shadowJar {

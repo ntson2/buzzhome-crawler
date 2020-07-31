@@ -28,6 +28,8 @@ functions:
     handler: 'com.blackboard.testing.lambda.LambdaTestHandler::handleRequest'
     name: lambda-selenium-web-scrapper
     description: Lambda Selenium Demo Tests
+    events:
+      - schedule: "rate(15 minutes)"
 
 resources:
   Parameters:
