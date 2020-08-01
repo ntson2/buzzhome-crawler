@@ -157,6 +157,10 @@ resources:
             AttributeType: N
           - AttributeName: id
             AttributeType: S
+          - AttributeName: price
+            AttributeType: N
+          - AttributeName: districtLocation
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -166,6 +170,18 @@ resources:
           ReadCapacityUnits: '5'
           WriteCapacityUnits: '5'
         TableName: fbgsaigonairbnb
+        GlobalSecondaryIndexes:
+          - IndexName: gsi_filter
+            KeySchema:
+              - AttributeName: districtLocation
+                KeyType: HASH
+              - AttributeName: price
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: '5'
+              WriteCapacityUnits: '5'
     operation:
       Type: AWS::DynamoDB::Table
       Properties:
