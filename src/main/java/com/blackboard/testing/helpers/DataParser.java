@@ -1,4 +1,4 @@
-package com.blackboard.testing.lambda;
+package com.blackboard.testing.helpers;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,9 +43,6 @@ public class DataParser {
             if (matcher.find()) {
                 String number = matcher.group(1) == null ? matcher.group(2) : matcher.group(1);
 
-                if (number == null) {
-                    System.out.println(post);
-                }
                 return Double.parseDouble(sanitize(number)) / priceMatcher.getMultiplyFactor();
             }
         }

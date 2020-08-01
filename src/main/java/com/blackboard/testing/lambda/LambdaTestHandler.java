@@ -6,13 +6,14 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfAllEle
 import com.blackboard.testing.Constants;
 import com.blackboard.testing.db.DynamodbClient;
 import com.blackboard.testing.driver.LambdaWebDriverThreadLocalContainer;
+import com.blackboard.testing.helpers.DataParser;
+import com.blackboard.testing.helpers.DistrictDataParser;
 import com.blackboard.testing.lambda.logger.Logger;
 import com.blackboard.testing.lambda.logger.LoggerContainer;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,9 +21,6 @@ import java.util.stream.Collectors;
 import com.blackboard.testing.models.FbGroupContent;
 import com.blackboard.testing.models.FbPage;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
-import org.junit.runners.BlockJUnit4ClassRunner;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
@@ -150,6 +148,8 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
             }
 
             double price = DataParser.getPriceInUSD(content);
+            String district = DistrictDataParser.getDistrict(content);
+
             FbGroupContent fbGroupContent = FbGroupContent.builder()
                     .id(UUID.randomUUID().toString())
                     .content(content)
@@ -162,6 +162,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
                     .link(link)
                     .postedTimestamp(postedTimestamp)
                     .price(price)
+                    .districtLocation(district)
                     .build();
 
             log.info("Scrapped: {}", fbGroupContent);

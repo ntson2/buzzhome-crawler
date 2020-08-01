@@ -1,4 +1,4 @@
-package com.blackboard.testing.lambda;
+package com.blackboard.testing.helpers;
 
 import lombok.Value;
 
