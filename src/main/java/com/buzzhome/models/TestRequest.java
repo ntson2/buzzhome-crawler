@@ -1,4 +1,4 @@
-package com.buzzhome.scrappers;
+package com.buzzhome.models;
 
 import static java.util.Optional.ofNullable;
 

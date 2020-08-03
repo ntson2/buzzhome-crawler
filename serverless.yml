@@ -195,3 +195,21 @@ resources:
           ReadCapacityUnits: '5'
           WriteCapacityUnits: '5'
         TableName: operation
+components:
+  getFbGroupContent:
+    type: aws-lambda
+    inputs:
+      memory: 512
+      timeout: 10
+      handler: com.buzzhome.api.GetFbGroupContent::handleRequest
+      root: ./code
+  productsApi:
+    type: rest-api
+    inputs:
+      gateway: aws-apigateway
+      routes:
+        /fbgroupcontent:
+          get:
+            function: ${getFbGroupContent}
+            cors: true
+            

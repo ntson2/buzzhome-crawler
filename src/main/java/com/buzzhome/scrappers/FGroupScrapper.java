@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 
 import com.buzzhome.models.FbGroupContent;
 import com.buzzhome.models.FbPage;
+import com.buzzhome.models.TestRequest;
+import com.buzzhome.models.TestResult;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -26,9 +28,9 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 @Slf4j
-public class FGroupScrapper implements RequestHandler<TestRequest, TestResult> {
+public class FGroupScrapper implements RequestHandler<String, String> {
 
-    public TestResult handleRequest(TestRequest testRequest, Context context) {
+    public String handleRequest(String testRequest, Context context) {
 
         log.info("Starting .........");
 
@@ -79,7 +81,7 @@ public class FGroupScrapper implements RequestHandler<TestRequest, TestResult> {
             webDriver.quit();
         }
 
-        return new TestResult();
+        return "success";
     }
 
     private long processOnePost(WebElement element, long checkpoint) {
