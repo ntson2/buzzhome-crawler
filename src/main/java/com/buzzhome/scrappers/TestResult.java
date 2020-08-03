@@ -1,4 +1,4 @@
-package com.blackboard.testing.lambda;
+package com.buzzhome.scrappers;
 
 import static java.util.Optional.ofNullable;
 

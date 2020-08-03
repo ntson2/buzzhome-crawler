@@ -1,4 +1,4 @@
-package com.blackboard.testing.helpers;
+package com.buzzhome.helpers;
 
 import lombok.Value;
 

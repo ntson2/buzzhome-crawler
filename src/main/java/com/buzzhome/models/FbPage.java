@@ -1,4 +1,4 @@
-package com.blackboard.testing.models;
+package com.buzzhome.models;
 
 import lombok.Builder;
 import lombok.Value;

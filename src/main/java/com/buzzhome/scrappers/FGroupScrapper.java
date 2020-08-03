@@ -1,15 +1,12 @@
-package com.blackboard.testing.lambda;
+package com.buzzhome.scrappers;
 
-import static com.blackboard.testing.lambda.logger.LoggerContainer.LOGGER;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfAllElementsLocatedBy;
 
-import com.blackboard.testing.Constants;
-import com.blackboard.testing.db.DynamodbClient;
-import com.blackboard.testing.driver.LambdaWebDriverThreadLocalContainer;
-import com.blackboard.testing.helpers.DataParser;
-import com.blackboard.testing.helpers.DistrictDataParser;
-import com.blackboard.testing.lambda.logger.Logger;
-import com.blackboard.testing.lambda.logger.LoggerContainer;
+import com.buzzhome.Constants;
+import com.buzzhome.db.DynamodbClient;
+import com.buzzhome.driver.LambdaWebDriverThreadLocalContainer;
+import com.buzzhome.helpers.DataParser;
+import com.buzzhome.helpers.DistrictDataParser;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
@@ -18,8 +15,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.blackboard.testing.models.FbGroupContent;
-import com.blackboard.testing.models.FbPage;
+import com.buzzhome.models.FbGroupContent;
+import com.buzzhome.models.FbPage;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -29,16 +26,9 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 @Slf4j
-public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult> {
-
-    private static TestResult testResult;
-
-    public LambdaTestHandler() {
-        testResult = new TestResult();
-    }
+public class FGroupScrapper implements RequestHandler<TestRequest, TestResult> {
 
     public TestResult handleRequest(TestRequest testRequest, Context context) {
-        LoggerContainer.LOGGER = new Logger(context.getLogger());
 
         log.info("Starting .........");
 
@@ -84,7 +74,7 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
             DynamodbClient.saveCheckpoint(checkpoint);
 
         } catch (Exception e) {
-            LOGGER.log(e);
+            log.error("Error scrapping", e);
         } finally {
             webDriver.quit();
         }
@@ -176,7 +166,4 @@ public class LambdaTestHandler implements RequestHandler<TestRequest, TestResult
         }
     }
 
-    public static void addAttachment(String fileName, byte[] attachment) {
-        testResult.getAttachments().put(fileName, attachment);
-    }
 }

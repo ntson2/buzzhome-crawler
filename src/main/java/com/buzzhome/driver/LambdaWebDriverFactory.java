@@ -1,4 +1,4 @@
-package com.blackboard.testing.driver;
+package com.buzzhome.driver;
 
 import com.codeborne.selenide.webdriver.WebDriverFactory;
 import org.openqa.selenium.Proxy;

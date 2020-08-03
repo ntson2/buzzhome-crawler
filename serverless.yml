@@ -25,7 +25,7 @@ provider:
 
 functions:
   'lambda-selenium-web-scrapper':
-    handler: 'com.blackboard.testing.lambda.LambdaTestHandler::handleRequest'
+    handler: 'com.buzzhome.lambda.LambdaTestHandler::handleRequest'
     name: lambda-selenium-web-scrapper
     description: Lambda Selenium Demo Tests
     events:
@@ -52,7 +52,7 @@ resources:
         aws:asset:path: "./src"
         aws:asset:property: Code
       Properties:
-        Handler: com.blackboard.testing.lambda.LambdaTestHandler::handleRequest
+        Handler: com.buzzhome.lambda.LambdaTestHandler::handleRequest
         FunctionName:
           Fn::If:
             - ShouldNotCreateEnvResources

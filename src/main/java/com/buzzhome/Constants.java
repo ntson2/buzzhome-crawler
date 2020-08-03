@@ -1,4 +1,4 @@
-package com.blackboard.testing;
+package com.buzzhome;
 
 import lombok.experimental.UtilityClass;
 

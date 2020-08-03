@@ -4,7 +4,7 @@ https://www.serverless.com/framework/docs/providers/aws/guide/credentials/
 2. Install the serverless framework
    npm install serverless -g
 
-3. Set username and password in com.blackboard.testing.Constants.java
+3. Set username and password in com.buzzhome.Constants.java
 
 4. Package the jar and deploy
 gradle clean unzipLibs shadowJar deploy

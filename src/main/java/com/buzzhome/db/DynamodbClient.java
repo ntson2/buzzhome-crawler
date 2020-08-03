@@ -1,10 +1,10 @@
-package com.blackboard.testing.db;
+package com.buzzhome.db;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.blackboard.testing.models.Checkpoint;
-import com.blackboard.testing.models.FbGroupContent;
+import com.buzzhome.models.Checkpoint;
+import com.buzzhome.models.FbGroupContent;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
