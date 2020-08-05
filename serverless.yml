@@ -24,12 +24,31 @@ provider:
       Resource: 'arn:aws:dynamodb:us-east-1:*:*'
 
 functions:
-  'lambda-selenium-web-scrapper':
-    handler: 'com.buzzhome.lambda.LambdaTestHandler::handleRequest'
+  lambda-selenium-web-scrapper:
+    handler: com.buzzhome.scrappers.FGroupScrapper::handleRequest
     name: lambda-selenium-web-scrapper
     description: Lambda Selenium Demo Tests
     events:
       - schedule: "rate(15 minutes)"
+  get-fb-group-content:
+    handler: com.buzzhome.api.GetFbGroupContentApi::handleRequest
+    name: get-fb-group-content
+    memory: 512
+    timeout: 15
+    events:
+      - http:
+          path: /fbGroupFeed
+          method: GET
+          request:
+            template:
+              application/json: >
+                {
+                  "pageNum" : "$input.params('pageNum')",
+                  "pageSize" : "$input.params('pageSize')",
+                  "districtLocation" : "$input.params('districtLocation')",
+                  "priceMin" : "$input.params('priceMin')",
+                  "priceMax" : "$input.params('priceMax')"
+                }
 
 resources:
   Parameters:
@@ -46,109 +65,6 @@ resources:
         - Ref: env
         - NONE
   Resources:
-    LambdaFunction:
-      Type: AWS::Lambda::Function
-      Metadata:
-        aws:asset:path: "./src"
-        aws:asset:property: Code
-      Properties:
-        Handler: com.buzzhome.lambda.LambdaTestHandler::handleRequest
-        FunctionName:
-          Fn::If:
-            - ShouldNotCreateEnvResources
-            - buzzho
-            - Fn::Join:
-                - ''
-                - - buzzho
-                  - "-"
-                  - Ref: env
-        Environment:
-          Variables:
-            ENV:
-              Ref: env
-            REGION:
-              Ref: AWS::Region
-        Role:
-          Fn::GetAtt:
-            - LambdaExecutionRole
-            - Arn
-        Runtime: java11
-        Timeout: '300'
-        MemorySize: 1536
-        Code:
-          S3Bucket: amplify-buzzho-dev-164754-deployment
-          S3Key: amplify-builds/buzzho-66566d4a434479636454-build.zip
-    LambdaExecutionRole:
-      Type: AWS::IAM::Role
-      Properties:
-        RoleName:
-          Fn::If:
-            - ShouldNotCreateEnvResources
-            - buzzhoLambdaRole56fd0e50
-            - Fn::Join:
-                - ''
-                - - buzzhoLambdaRole56fd0e50
-                  - "-"
-                  - Ref: env
-        AssumeRolePolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action:
-                - sts:AssumeRole
-    lambdaexecutionpolicy:
-      DependsOn:
-        - LambdaExecutionRole
-      Type: AWS::IAM::Policy
-      Properties:
-        PolicyName: lambda-execution-policy
-        Roles:
-          - Ref: LambdaExecutionRole
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Resource: "*"
-            - Effect: Allow
-              Action:
-                - dynamodb:DescribeTable
-                - dynamodb:Query
-                - dynamodb:Scan
-                - dynamodb:PutItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: "*"
-    CloudWatchEvent:
-      Type: AWS::Events::Rule
-      Properties:
-        Description: Schedule rule for Lambda
-        ScheduleExpression:
-          Ref: CloudWatchRule
-        State: ENABLED
-        Targets:
-          - Arn:
-              Fn::GetAtt:
-                - LambdaFunction
-                - Arn
-            Id: LambdaFunction
-    PermissionForEventsToInvokeLambda:
-      Type: AWS::Lambda::Permission
-      Properties:
-        FunctionName:
-          Ref: LambdaFunction
-        Action: lambda:InvokeFunction
-        Principal: events.amazonaws.com
-        SourceArn:
-          Fn::GetAtt:
-            - CloudWatchEvent
-            - Arn
     fbgsaigonairbnb:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -195,21 +111,3 @@ resources:
           ReadCapacityUnits: '5'
           WriteCapacityUnits: '5'
         TableName: operation
-components:
-  getFbGroupContent:
-    type: aws-lambda
-    inputs:
-      memory: 512
-      timeout: 10
-      handler: com.buzzhome.api.GetFbGroupContent::handleRequest
-      root: ./code
-  productsApi:
-    type: rest-api
-    inputs:
-      gateway: aws-apigateway
-      routes:
-        /fbgroupcontent:
-          get:
-            function: ${getFbGroupContent}
-            cors: true
-            

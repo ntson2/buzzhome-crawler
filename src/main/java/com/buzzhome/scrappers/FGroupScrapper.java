@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 
 import com.buzzhome.models.FbGroupContent;
 import com.buzzhome.models.FbPage;
-import com.buzzhome.models.TestRequest;
-import com.buzzhome.models.TestResult;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -28,9 +26,9 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 @Slf4j
-public class FGroupScrapper implements RequestHandler<String, String> {
+public class FGroupScrapper implements RequestHandler<Object, String> {
 
-    public String handleRequest(String testRequest, Context context) {
+    public String handleRequest(Object testRequest, Context context) {
 
         log.info("Starting .........");
 
@@ -87,7 +85,7 @@ public class FGroupScrapper implements RequestHandler<String, String> {
     private long processOnePost(WebElement element, long checkpoint) {
         try {
             WebElement timeElement = element.findElement(By.cssSelector("._5ptz.timestamp.livetimestamp"));
-            String timeString = timeElement.getAttribute("title");
+            String postedTimeString = timeElement.getAttribute("title");
             String postedTimestampString = timeElement.getAttribute("data-utime");
             long postedTimestamp = Long.parseLong(postedTimestampString);
 
@@ -142,20 +140,19 @@ public class FGroupScrapper implements RequestHandler<String, String> {
             double price = DataParser.getPriceInUSD(content);
             String district = DistrictDataParser.getDistrict(content);
 
-            FbGroupContent fbGroupContent = FbGroupContent.builder()
-                    .id(UUID.randomUUID().toString())
-                    .content(content)
-                    .author(FbPage.builder().text(authorName).link(authorProfile).build())
-                    .location(FbPage.builder().text(locationName).link(locationLink).build())
-                    .tagged(FbPage.builder().text(taggedName).link(taggedLink).build())
-                    .savedTimestamp(timestamp)
-                    .postedTimeString(timeString)
-                    .photos(photos)
-                    .link(link)
-                    .postedTimestamp(postedTimestamp)
-                    .price(price)
-                    .districtLocation(district)
-                    .build();
+            FbGroupContent fbGroupContent = new FbGroupContent();
+            fbGroupContent.setId(UUID.randomUUID().toString());
+            fbGroupContent.setContent(content);
+            fbGroupContent.setAuthor(toFbPageObject(authorName, authorProfile));
+            fbGroupContent.setLocation(toFbPageObject(locationName, locationLink));
+            fbGroupContent.setTagged(toFbPageObject(taggedName, taggedLink));
+            fbGroupContent.setSavedTimestamp(timestamp);
+            fbGroupContent.setPostedTimeString(postedTimeString);
+            fbGroupContent.setPhotos(photos);
+            fbGroupContent.setLink(link);
+            fbGroupContent.setPostedTimestamp(postedTimestamp);
+            fbGroupContent.setPrice(price);
+            fbGroupContent.setDistrictLocation(district);
 
             log.info("Scrapped: {}", fbGroupContent);
 
@@ -168,4 +165,11 @@ public class FGroupScrapper implements RequestHandler<String, String> {
         }
     }
 
+    private FbPage toFbPageObject(String authorName, String authorProfile) {
+        FbPage fbPage = new FbPage();
+        fbPage.setLink(authorProfile);
+        fbPage.setText(authorName);
+
+        return fbPage;
+    }
 }

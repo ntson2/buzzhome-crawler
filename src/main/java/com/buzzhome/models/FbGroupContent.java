@@ -9,16 +9,17 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.List;
 
-@Value
-@Builder
-@DynamoDBTable(tableName="fbgsaigonairbnb")
 @Slf4j
+@Setter
+@Getter
+@DynamoDBTable(tableName="fbgsaigonairbnb")
 public class FbGroupContent {
 
     @DynamoDBHashKey(attributeName = "id")
@@ -55,7 +56,7 @@ public class FbGroupContent {
     List<String> photos;
 
     @DynamoDBAttribute(attributeName = "price")
-    double price;
+    Double price;
 
     @DynamoDBAttribute(attributeName = "districtLocation")
     String districtLocation;
@@ -83,5 +84,9 @@ public class FbGroupContent {
                 return null;
             }
         }
+    }
+
+    public FbGroupContent() {
+        // Deserialization
     }
 }

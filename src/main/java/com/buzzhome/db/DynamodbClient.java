@@ -8,12 +8,12 @@ import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.buzzhome.models.Checkpoint;
 import com.buzzhome.models.FbGroupContent;
-import com.buzzhome.models.FilterRequest;
 import com.buzzhome.models.GetFbGroupRequest;
 import com.buzzhome.models.GetFbGroupResponse;
 import org.apache.commons.lang3.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +22,7 @@ public class DynamodbClient {
 
     private static final String CHECKPOINT_KEY = "checkpoint";
     private static final int MAX_GET_RESULTS = 1000;
-    private static final int PAGE_SIZE = 10;
+    private static final int DEFAULT_PAGE_SIZE = 10;
     private static final String GSI_NAME = "gsi_filter";
 
     public static void insert(FbGroupContent fbGroupContent) {
@@ -66,54 +66,75 @@ public class DynamodbClient {
 
     public static GetFbGroupResponse getFbGroupContent(GetFbGroupRequest request) {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
-        FilterRequest filter = request.getFilter();
 
         DynamoDBMapper mapper = new DynamoDBMapper(client);
 
-        Map<String, AttributeValue> attributeValueMap = getAttributeValueMap(filter);
-        String keyCondition = getKeyCondition(filter);
+        Map<String, AttributeValue> attributeValueMap = getAttributeValueMap(request);
+        String keyCondition = getKeyCondition(request);
 
         DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression();
-        queryExpression.withKeyConditionExpression("Id = :val1 and ReplyDateTime > :val2")
+        queryExpression.withKeyConditionExpression(keyCondition)
                 .withExpressionAttributeValues(attributeValueMap)
                 .withIndexName(GSI_NAME)
                 .withLimit(MAX_GET_RESULTS)
                 .setScanIndexForward(false);
+        queryExpression.setConsistentRead(false); // Consistent reads are not supported on global secondary indexes
 
         PaginatedQueryList<FbGroupContent> result = mapper.query(FbGroupContent.class, queryExpression);
         int pageNum = request.getPageNum();
+        int pageSize = request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize();
 
-        return GetFbGroupResponse.builder().numResults(result.size())
-                .results(result.subList(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE))
-                .build();
+        int startIndex = pageNum * pageSize;
+
+        if (startIndex >= result.size()) {
+            return GetFbGroupResponse.builder().numResults(result.size()).results(Collections.emptyList()).build();
+        } else {
+            return GetFbGroupResponse.builder().numResults(result.size())
+                    .results(result.subList(startIndex, Math.min(result.size(), (pageNum + 1) * pageSize)))
+                    .build();
+        }
     }
 
-    private static Map<String, AttributeValue> getAttributeValueMap(FilterRequest filter) {
+    private static Map<String, AttributeValue> getAttributeValueMap(GetFbGroupRequest request) {
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
 
-        attributeValueMap.put("districtLocation", new AttributeValue(filter.getDistrictLocation()));
-        attributeValueMap.put("priceMin", new AttributeValue().withN(filter.getPriceMin().toString()));
-        attributeValueMap.put("priceMax", new AttributeValue().withN(filter.getPriceMax().toString()));
+        if (request.getDistrictLocation() != null) {
+            attributeValueMap.put(":districtLocation", new AttributeValue(request.getDistrictLocation()));
+        }
+        if (request.getPriceMin() != null) {
+            attributeValueMap.put(":priceMin", new AttributeValue().withN(request.getPriceMin().toString()));
+        }
+        if (request.getPriceMax() != null) {
+            attributeValueMap.put(":priceMax", new AttributeValue().withN(request.getPriceMax().toString()));
+        }
 
         return attributeValueMap;
     }
 
-    private static String getKeyCondition(FilterRequest filter) {
+    private static String getKeyCondition(GetFbGroupRequest request) {
         String result = StringUtils.EMPTY;
-        if (filter.getDistrictLocation() != null) {
-            result = result + "districtLocation = :districtLocation";
+        if (request.getDistrictLocation() != null) {
+            result = "districtLocation = :districtLocation";
         }
-        if (filter.getPriceMin() != null) {
+
+        if (request.getPriceMin() != null && request.getPriceMax() != null) {
             if (!result.equals(StringUtils.EMPTY)) {
                 result = result + " and ";
             }
-            result = result + "price >= :priceMin";
-        }
-        if (filter.getPriceMax() != null) {
-            if (!result.equals(StringUtils.EMPTY)) {
-                result = result + " and ";
+            result = result + "price between :priceMin and :priceMax";
+        } else {
+            if (request.getPriceMin() != null) {
+                if (!result.equals(StringUtils.EMPTY)) {
+                    result = result + " and ";
+                }
+                result = result + "price >= :priceMin";
             }
-            result = result + "price >= :priceMax";
+            if (request.getPriceMax() != null) {
+                if (!result.equals(StringUtils.EMPTY)) {
+                    result = result + " and ";
+                }
+                result = result + "price >= :priceMax";
+            }
         }
         return result;
     }
