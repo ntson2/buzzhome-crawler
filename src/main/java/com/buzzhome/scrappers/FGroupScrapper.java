@@ -62,15 +62,22 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             log.info("There are {} elements", webElements.size());
 
             long checkpoint = originalCheckpoint;
+            int numProcessed = 0;
 
             for (WebElement element : webElements) {
                 long postedTimestamp = processOnePost(element, originalCheckpoint);
+                if (postedTimestamp != -1) {
+                    numProcessed++;
+                }
                 if (postedTimestamp > checkpoint) {
                     checkpoint = postedTimestamp;
                 }
             }
 
-            log.info("Saving checkpoint {} --------------------------------------------", checkpoint);
+            log.info("Processed {} records, saving checkpoint {} --------------------------------------------", numProcessed, checkpoint);
+            if (numProcessed == webElements.size()) {
+                log.warn("Possible lost of data due to low frequency scrapping");
+            }
             DynamodbClient.saveCheckpoint(checkpoint);
 
         } catch (Exception e) {
@@ -92,7 +99,7 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             if (postedTimestamp <= checkpoint) {
                 // already processed this post
                 log.warn("Already processed this record with timestamp = {} and checkpoint = {}", postedTimestamp, checkpoint);
-                return checkpoint;
+                return -1;
             }
             List<WebElement> profile = element.findElements(By.className("profileLink"));
             String authorName;
@@ -141,7 +148,6 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             String district = DistrictDataParser.getDistrict(content);
 
             FbGroupContent fbGroupContent = new FbGroupContent();
-            fbGroupContent.setId(UUID.randomUUID().toString());
             fbGroupContent.setContent(content);
             fbGroupContent.setAuthor(toFbPageObject(authorName, authorProfile));
             fbGroupContent.setLocation(toFbPageObject(locationName, locationLink));
@@ -161,7 +167,7 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             return postedTimestamp;
         } catch (Exception e) {
             log.error("Error processing webelements {}", element.getText(), e);
-            return checkpoint;
+            return -1;
         }
     }
 
