@@ -38,17 +38,8 @@ functions:
     events:
       - http:
           path: /fbGroupFeed
-          method: GET
-          request:
-            template:
-              application/json: >
-                {
-                  "pageNum" : "$input.params('pageNum')",
-                  "pageSize" : "$input.params('pageSize')",
-                  "districtLocation" : "$input.params('districtLocation')",
-                  "priceMin" : "$input.params('priceMin')",
-                  "priceMax" : "$input.params('priceMax')"
-                }
+          method: POST
+          integration: lambda
 
 resources:
   Parameters:

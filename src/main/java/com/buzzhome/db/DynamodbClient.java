@@ -25,10 +25,9 @@ import java.util.Map;
 public class DynamodbClient {
 
     private static final String CHECKPOINT_KEY = "checkpoint";
-    private static final int MAX_GET_RESULTS = 10000;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final String GSI_NAME = "gsi_filter";
-    private static final int DAYS_TO_LOOK_BACK = 60;
+    private static final int DAYS_TO_LOOK_BACK = 30;
     private static final String HASH_KEY = "fb-post-item";
 
     public static void insert(FbGroupContent fbGroupContent) {
@@ -83,13 +82,9 @@ public class DynamodbClient {
         int pageSize = request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize();
         int startIndex = pageNum * pageSize;
 
-        if (!attributeValueMap.isEmpty()) {
-            DateTime timeToLookBack = new DateTime().minusDays(DAYS_TO_LOOK_BACK);
+        if (request.getDistrictLocation() != null) {
 
             DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression();
-
-            attributeValueMap.put(":minTimestamp",
-                    new AttributeValue().withN(Long.toString(timeToLookBack.getMillis() / 1000)));
 
             queryExpression.withIndexName(GSI_NAME)
                     .withKeyConditionExpression(keyCondition)
@@ -110,11 +105,16 @@ public class DynamodbClient {
                         .build();
             }
         } else {
+            attributeValueMap.put(":hash_key", new AttributeValue(HASH_KEY));
+
             DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression();
-            queryExpression.withLimit(MAX_GET_RESULTS)
-                    .withKeyConditionExpression("id = :hash_key")
-                    .withExpressionAttributeValues(Collections.singletonMap(":hash_key", new AttributeValue(HASH_KEY)))
+            queryExpression.withKeyConditionExpression("id = :hash_key and postedTimestamp > :minTimestamp ")
+                    .withExpressionAttributeValues(attributeValueMap)
                     .setScanIndexForward(false);
+
+            if (!keyCondition.isEmpty()) {
+                queryExpression.withFilterExpression(keyCondition);
+            }
 
             PaginatedQueryList<FbGroupContent> result = mapper.query(FbGroupContent.class, queryExpression);
 
@@ -140,7 +140,9 @@ public class DynamodbClient {
         if (request.getPriceMax() != null) {
             attributeValueMap.put(":priceMax", new AttributeValue().withN(request.getPriceMax().toString()));
         }
-
+        DateTime timeToLookBack = new DateTime().minusDays(DAYS_TO_LOOK_BACK);
+        attributeValueMap.put(":minTimestamp",
+                new AttributeValue().withN(Long.toString(timeToLookBack.getMillis() / 1000)));
         return attributeValueMap;
     }
 
@@ -166,7 +168,7 @@ public class DynamodbClient {
                 if (!result.equals(StringUtils.EMPTY)) {
                     result = result + " and ";
                 }
-                result = result + "price >= :priceMax";
+                result = result + "price <= :priceMax";
             }
         }
         return result;
