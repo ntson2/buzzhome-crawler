@@ -12,6 +12,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -145,7 +146,7 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             }
 
             double price = DataParser.getPriceInUSD(content);
-            String district = DistrictDataParser.getDistrict(content);
+            Optional<String> district = DistrictDataParser.getDistrict(content);
 
             FbGroupContent fbGroupContent = new FbGroupContent();
             fbGroupContent.setContent(content);
@@ -158,7 +159,9 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             fbGroupContent.setLink(link);
             fbGroupContent.setPostedTimestamp(postedTimestamp);
             fbGroupContent.setPrice(price);
-            fbGroupContent.setDistrictLocation(district);
+            if (district.isPresent()) {
+                fbGroupContent.setDistrictLocation(district.get());
+            }
 
             log.info("Scrapped: {}", fbGroupContent);
 

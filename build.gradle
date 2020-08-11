@@ -35,6 +35,25 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok:1.18.12'
     annotationProcessor 'org.projectlombok:lombok:1.18.12'
+
+    testCompile("org.testng:testng:6.8.7") {
+        exclude module: 'junit'
+    }
+}
+
+test {
+    useJUnitPlatform()
+
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    testClassesDirs = sourceSets.test.output
+    classpath = sourceSets.test.runtimeClasspath
+
+    reports {
+        html.enabled = true
+    }
 }
 
 task unzipLibs(type: Copy) {
@@ -58,4 +77,10 @@ shadowJar {
 
 task deploy(type: Exec) {
     commandLine 'sls', 'deploy'
+}
+
+sourceSets {
+    test {
+        java.srcDir file('src/test/java/')
+    }
 }
