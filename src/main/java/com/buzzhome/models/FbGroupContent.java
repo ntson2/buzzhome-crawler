@@ -8,7 +8,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Builder;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.Getter;
@@ -61,6 +60,10 @@ public class FbGroupContent {
     @DynamoDBAttribute(attributeName = "districtLocation")
     String districtLocation;
 
+    @DynamoDBTypeConverted(converter = CommentConverter.class)
+    @DynamoDBAttribute(attributeName = "comments")
+    List<Comment> comments;
+
     static public class FbPageConverter implements DynamoDBTypeConverter<String, FbPage> {
         @Override
         public String convert(FbPage object) {
@@ -79,6 +82,31 @@ public class FbGroupContent {
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 return objectMapper.readValue(object, FbPage.class);
+            } catch (IOException e) {
+                log.error("Fail to unconvert {}", object, e);
+                return null;
+            }
+        }
+    }
+
+    static public class CommentConverter implements DynamoDBTypeConverter<String, Comment> {
+        @Override
+        public String convert(Comment object) {
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            try {
+                return objectMapper.writeValueAsString(object);
+            } catch (JsonProcessingException e) {
+                log.error("Fail to convert {}", object, e);
+                return null;
+            }
+        }
+
+        @Override
+        public Comment unconvert(String object) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                return objectMapper.readValue(object, Comment.class);
             } catch (IOException e) {
                 log.error("Fail to unconvert {}", object, e);
                 return null;

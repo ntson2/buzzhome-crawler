@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.buzzhome.models.Comment;
 import com.buzzhome.models.FbGroupContent;
 import com.buzzhome.models.FbPage;
 import lombok.extern.slf4j.Slf4j;
@@ -148,6 +149,14 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             double price = DataParser.getPriceInUSD(content);
             Optional<String> district = DistrictDataParser.getDistrict(content);
 
+            List<WebElement> commentWebElements = element.findElements(By.className("_72vr"));
+            List<Comment> comments = commentWebElements.stream().map(
+                    e -> Comment.builder()
+                            .commenter(e.findElement(By.className("_6qw4")).getText())
+                            .content(e.findElement(By.className("_3l3x")).getText())
+                            .build())
+                    .collect(Collectors.toList());
+
             FbGroupContent fbGroupContent = new FbGroupContent();
             fbGroupContent.setContent(content);
             fbGroupContent.setAuthor(toFbPageObject(authorName, authorProfile));
@@ -159,6 +168,7 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
             fbGroupContent.setLink(link);
             fbGroupContent.setPostedTimestamp(postedTimestamp);
             fbGroupContent.setPrice(price);
+            fbGroupContent.setComments(comments);
             if (district.isPresent()) {
                 fbGroupContent.setDistrictLocation(district.get());
             }
