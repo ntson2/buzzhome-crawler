@@ -18,7 +18,7 @@ repositories {
 }
 
 test {
-    include '**/ExampleTestSuite.class'
+    include '**/*Test.class'
 }
 
 dependencies {
@@ -38,21 +38,6 @@ dependencies {
 
     testCompile("org.testng:testng:6.8.7") {
         exclude module: 'junit'
-    }
-}
-
-test {
-    useJUnitPlatform()
-
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
-
-    testClassesDirs = sourceSets.test.output
-    classpath = sourceSets.test.runtimeClasspath
-
-    reports {
-        html.enabled = true
     }
 }
 

@@ -15,13 +15,19 @@ public class DistrictDataParserTest {
             "VINHOMES center Park (VIEW LANDMARK 81)\\n\\uD83D\\uDC49 There are many famous shopping, Supermarket, food service, GYM, and entertainment";
     private static final String RESULT_1 = "binh thanh";
 
-    private static final List<String> TESTED_CONTENT = Arrays.asList(CONTENT_1);
-    private static final List<String> EXPECTED_RESULT = Arrays.asList(RESULT_1);
+    private static final String CONTENT_2 = "[Vietnamese - Căn hộ cho thuê]\\nChủ nhà gửi cho thuê căn 2pn 2wc Saigon Royal.\\n" +
+            "Địa chỉ: 34-35 Bến Vân Đồn, Phường 12, Quận 4, TPHCM.\\n5 phút đi bộ đến Q1 Trung Tâm Thành Phố.\\nDiện tích 73m2.\\nGiá thuê " +
+            "30.000.000 VND/ tháng. ( bao phí quản lý)\\nNhà full nội thất như hình.\\nTiện ích hồ bơi, phòng gym, BBQ, vườn treo.\\nLiên hệ : " +
+            "0916189066 (Zalo/viber/imess).\\n[English - Apartment For Rent]\\nRenting out 2-bedroom Apartment in Saigon Royal.\\nAddress: 34";
+    private static final String RESULT_2 = "4";
+
+    private static final List<String> TESTED_CONTENT = Arrays.asList(CONTENT_1, CONTENT_2);
+    private static final List<String> EXPECTED_RESULT = Arrays.asList(RESULT_1, RESULT_2);
 
     @Test
     public void runTest() {
-        for (int indx = 0; indx <= TESTED_CONTENT.size(); indx++) {
-            assertEquals(EXPECTED_RESULT.get(indx), DistrictDataParser.getDistrict(TESTED_CONTENT.get(indx)));
+        for (int indx = 0; indx < TESTED_CONTENT.size(); indx++) {
+            assertEquals(EXPECTED_RESULT.get(indx), DistrictDataParser.getDistrict(TESTED_CONTENT.get(indx)).get());
         }
     }
 }
