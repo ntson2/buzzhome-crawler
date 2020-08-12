@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DataParser {
+public class PriceDataParser {
 
     private static final String NUMBER_VN_FORMAT_REGEX = "([0-9]+[\\.,0-9]*)";
 

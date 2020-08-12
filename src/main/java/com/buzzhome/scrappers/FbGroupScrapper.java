@@ -5,7 +5,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfAllEle
 import com.buzzhome.Constants;
 import com.buzzhome.db.DynamodbClient;
 import com.buzzhome.driver.LambdaWebDriverThreadLocalContainer;
-import com.buzzhome.helpers.DataParser;
+import com.buzzhome.helpers.PriceDataParser;
 import com.buzzhome.helpers.DistrictDataParser;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -13,7 +13,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.buzzhome.models.Comment;
@@ -28,9 +27,9 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 @Slf4j
-public class FGroupScrapper implements RequestHandler<Object, String> {
+public class FbGroupScrapper implements RequestHandler<Object, String> {
 
-    public String handleRequest(Object testRequest, Context context) {
+    public String handleRequest(Object request, Context context) {
 
         log.info("Starting .........");
 
@@ -146,7 +145,7 @@ public class FGroupScrapper implements RequestHandler<Object, String> {
                 link = links.get(0).getAttribute("href");
             }
 
-            double price = DataParser.getPriceInUSD(content);
+            double price = PriceDataParser.getPriceInUSD(content);
             Optional<String> district = DistrictDataParser.getDistrict(content);
 
             List<WebElement> commentWebElements = element.findElements(By.className("_72vr"));

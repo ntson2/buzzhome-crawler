@@ -3,6 +3,7 @@ package com.buzzhome.db;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedList;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
@@ -89,7 +90,7 @@ public class DynamodbClient {
             queryExpression.withIndexName(GSI_NAME)
                     .withKeyConditionExpression(keyCondition)
                     .withExpressionAttributeValues(attributeValueMap)
-                    .withFilterExpression("postedTimestamp > :minTimestamp");
+                    .withFilterExpression("postedTimestamp > :min_timestamp");
             queryExpression.setConsistentRead(false); // Consistent reads are not supported on global secondary indexes
 
             PaginatedQueryList<FbGroupContent> result = mapper.query(FbGroupContent.class, queryExpression);
@@ -108,7 +109,7 @@ public class DynamodbClient {
             attributeValueMap.put(":hash_key", new AttributeValue(HASH_KEY));
 
             DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression();
-            queryExpression.withKeyConditionExpression("id = :hash_key and postedTimestamp > :minTimestamp ")
+            queryExpression.withKeyConditionExpression("id = :hash_key and postedTimestamp > :min_timestamp")
                     .withExpressionAttributeValues(attributeValueMap)
                     .setScanIndexForward(false);
 
@@ -141,7 +142,7 @@ public class DynamodbClient {
             attributeValueMap.put(":priceMax", new AttributeValue().withN(request.getPriceMax().toString()));
         }
         DateTime timeToLookBack = new DateTime().minusDays(DAYS_TO_LOOK_BACK);
-        attributeValueMap.put(":minTimestamp",
+        attributeValueMap.put(":min_timestamp",
                 new AttributeValue().withN(Long.toString(timeToLookBack.getMillis() / 1000)));
         return attributeValueMap;
     }
@@ -174,4 +175,34 @@ public class DynamodbClient {
         return result;
     }
 
+    public static List<FbGroupContent> getPosts(int dayToLookBack) {
+        DateTime timeToLookBack = new DateTime().minusDays(dayToLookBack);
+
+        Map<String, AttributeValue> expressionAttributes = new HashMap<>();
+        expressionAttributes.put(":hash_key", new AttributeValue(HASH_KEY));
+        expressionAttributes.put(":min_timestamp",
+                new AttributeValue().withN(Long.toString(timeToLookBack.getMillis() / 1000)));
+
+        DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression();
+        queryExpression.withKeyConditionExpression("id = :hash_key and postedTimestamp > :min_timestamp")
+                .withExpressionAttributeValues(expressionAttributes)
+                .setScanIndexForward(false);
+
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+
+        DynamoDBMapper mapper = new DynamoDBMapper(client);
+
+        PaginatedQueryList<FbGroupContent> result = mapper.query(FbGroupContent.class, queryExpression);
+
+        return new ArrayList<>(result);
+    }
+
+    public static void update(FbGroupContent content) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+
+        DynamoDBMapper mapper = new DynamoDBMapper(client);
+
+        mapper.save(content, DynamoDBMapperConfig.builder()
+                .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE).build());
+    }
 }

@@ -24,12 +24,10 @@ provider:
       Resource: 'arn:aws:dynamodb:us-east-1:*:*'
 
 functions:
-  lambda-selenium-web-scrapper:
-    handler: com.buzzhome.scrappers.FGroupScrapper::handleRequest
-    name: lambda-selenium-web-scrapper
+  data-reparser-lambda:
+    handler: com.buzzhome.scrappers.DataReparserLambda::handleRequest
+    name: data-reparser-lambda
     description: Lambda Selenium Demo Tests
-    events:
-      - schedule: "rate(15 minutes)"
   get-fb-group-content:
     handler: com.buzzhome.api.GetFbGroupContentApi::handleRequest
     name: get-fb-group-content
@@ -41,6 +39,10 @@ functions:
           method: POST
           integration: lambda
           cors: true
+  lambda-selenium-web-scrapper:
+    handler: com.buzzhome.scrappers.FbGroupScrapper::handleRequest
+    name: lambda-selenium-web-scrapper
+    description: Lambda Selenium Demo Tests
 
 resources:
   Parameters:

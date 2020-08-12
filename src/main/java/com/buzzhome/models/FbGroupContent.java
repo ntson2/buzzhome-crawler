@@ -55,7 +55,7 @@ public class FbGroupContent {
     List<String> photos;
 
     @DynamoDBAttribute(attributeName = "price")
-    Double price;
+    double price;
 
     @DynamoDBAttribute(attributeName = "districtLocation")
     String districtLocation;
