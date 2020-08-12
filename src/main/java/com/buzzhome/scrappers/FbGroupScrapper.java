@@ -135,7 +135,7 @@ public class FbGroupScrapper implements RequestHandler<Object, String> {
             long timestamp = System.currentTimeMillis();
 
             List<WebElement> photoElements = element.findElements(By.cssSelector("._5dec._xcx"));
-            List<String> photos = photoElements.stream().map(e -> e.getAttribute("href")).collect(Collectors.toList());
+            List<String> photos = photoElements.stream().map(e -> e.getAttribute("data-ploi")).collect(Collectors.toList());
 
             String link = null;
             List<WebElement> links = element.findElements(By.className("_5pcq"));
