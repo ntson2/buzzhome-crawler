@@ -89,9 +89,9 @@ public class FbGroupContent {
         }
     }
 
-    static public class CommentConverter implements DynamoDBTypeConverter<String, Comment> {
+    static public class CommentConverter implements DynamoDBTypeConverter<String, List<Comment>> {
         @Override
-        public String convert(Comment object) {
+        public String convert(List<Comment> object) {
             ObjectMapper objectMapper = new ObjectMapper();
 
             try {
@@ -103,7 +103,7 @@ public class FbGroupContent {
         }
 
         @Override
-        public Comment unconvert(String object) {
+        public List<Comment> unconvert(String object) {
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 return objectMapper.readValue(object, Comment.class);
