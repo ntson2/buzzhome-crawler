@@ -51,7 +51,7 @@ public class FbGroupScrapper implements RequestHandler<Object, String> {
             Actions action = new Actions(webDriver);
             action.sendKeys(Keys.ESCAPE).perform();
 
-            List<WebElement> seeMore = wait.until(presenceOfAllElementsLocatedBy(By.linkText("See More")));
+            List<WebElement> seeMore = wait.until(presenceOfAllElementsLocatedBy(By.linkText("See more")));
 
             for (WebElement element : seeMore) {
                 Thread.sleep(5000);
@@ -92,9 +92,17 @@ public class FbGroupScrapper implements RequestHandler<Object, String> {
 
     private long processOnePost(WebElement element, long checkpoint) {
         try {
-            WebElement timeElement = element.findElement(By.cssSelector("._5ptz.timestamp.livetimestamp"));
+            WebElement timeElement;
+            try {
+                timeElement = element.findElement(By.cssSelector("._5ptz.timestamp.livetimestamp"));
+            } catch (Exception e) {
+                System.out.println("Exception: " + e.getMessage());
+                timeElement = element.findElement(By.className("._5ptz"));
+            }
+
             String postedTimeString = timeElement.getAttribute("title");
             String postedTimestampString = timeElement.getAttribute("data-utime");
+
             long postedTimestamp = Long.parseLong(postedTimestampString);
 
             if (postedTimestamp <= checkpoint) {
