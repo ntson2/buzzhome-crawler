@@ -92,13 +92,10 @@ public class FbGroupScrapper implements RequestHandler<Object, String> {
 
     private long processOnePost(WebElement element, long checkpoint) {
         try {
-            WebElement timeElement;
-            try {
-                timeElement = element.findElement(By.cssSelector("._5ptz.timestamp.livetimestamp"));
-            } catch (Exception e) {
-                System.out.println("Exception: " + e.getMessage());
-                timeElement = element.findElement(By.className("._5ptz"));
-            }
+
+            List<WebElement> timeElements = element.findElements(By.cssSelector("._5ptz.timestamp.livetimestamp"));
+
+            WebElement timeElement = timeElements.isEmpty() ? element.findElement(By.className("._5ptz")) : timeElements.get(0);
 
             String postedTimeString = timeElement.getAttribute("title");
             String postedTimestampString = timeElement.getAttribute("data-utime");
